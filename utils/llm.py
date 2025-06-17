@@ -13,9 +13,16 @@
 # limitations under the License.
 
 
-import openai
+from openai import OpenAI
 import time
 import numpy as np
+from dotenv import load_dotenv
+import os
+load_dotenv()
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if openai_api_key is None:
+    raise ValueError("OPENAI_API_KEY environment variable is not set.")
+client = OpenAI(api_key=openai_api_key)
 
 
 class ChatGPT:
@@ -53,13 +60,10 @@ class ChatGPT:
         error = None
         while gpt_responses is None:
             try:
-                gpt_responses = openai.ChatCompletion.create(
-                    model=self.model_name,
-                    messages=messages,
-                    stop=end_str,
-                    api_key=self.key,
-                    **options
-                )
+                gpt_responses = client.chat.completions.create(model=self.model_name,
+                messages=messages,
+                stop=end_str,
+                **options)
                 error = None
             except Exception as e:
                 print(str(e), flush=True)
@@ -80,10 +84,10 @@ class ChatGPT:
         if error:
             raise Exception(error)
         results = []
-        for i, res in enumerate(gpt_responses["choices"]):
-            text = res["message"]["content"]
-            fake_conf = (len(gpt_responses["choices"]) - i) / len(
-                gpt_responses["choices"]
+        for i, res in enumerate(gpt_responses.choices):
+            text = res.message.content
+            fake_conf = (len(gpt_responses.choices) - i) / len(
+                gpt_responses.choices
             )
             results.append((text, np.log(fake_conf)))
 
